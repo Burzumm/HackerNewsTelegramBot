@@ -1,0 +1,8 @@
+{
+  "telegramBotApiKey" : "",
+  "telegramChatId" : "",
+  "hackerNewsGetByItemid" : "https://hacker-news.firebaseio.com/v0/item/",
+  "hackerNewsGetTopNewsIds" : "https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty",
+  "oldNewsFilePath" : "./old-news.json"
+
+}
