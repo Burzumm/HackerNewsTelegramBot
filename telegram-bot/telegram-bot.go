@@ -24,8 +24,8 @@ func (t *TgBot) StartBot() {
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 	t.Bot = bot
 }
-func (t *TgBot) SendMessage(message string) {
-	msg := tgbotapi.NewMessage(449202647, message)
+func (t *TgBot) SendMessage(message string, chaId int64) {
+	msg := tgbotapi.NewMessage(chaId, message)
 	_, err := t.Bot.Send(msg)
 	if err != nil {
 		return
