@@ -2,8 +2,8 @@ package hacker_news
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -20,35 +20,36 @@ func (t ApiHackerNewsClient) GetNews(existNews []int64) []*News {
 	topAndNewNews := t.GetTopAndNewNews()
 	var notExistNews []int64
 	if len(existNews) != 0 {
-		for newsIndex := 0; newsIndex < len(topAndNewNews); newsIndex++ {
+		for _, newItem := range topAndNewNews {
 			isAdded := false
-			for oldNewsIndex := 0; oldNewsIndex < len(existNews); oldNewsIndex++ {
-				if topAndNewNews[newsIndex] == existNews[oldNewsIndex] {
+			for _, oldItem := range existNews {
+				if newItem == oldItem {
 					isAdded = true
+					break
 				}
 			}
 			if !isAdded {
-				i := append(notExistNews, topAndNewNews[newsIndex])
+				i := append(notExistNews, newItem)
 				notExistNews = i
 			}
 		}
 	}
 
-	for i := 0; i < len(notExistNews); i++ {
-		url := t.GetByIdEndpoint + strconv.FormatInt(notExistNews[i], 10) + ".json?print=pretty"
+	for _, item := range notExistNews {
+		url := t.GetByIdEndpoint + strconv.FormatInt(item, 10) + ".json?print=pretty"
 		res, err := http.Get(url)
 		if err != nil {
-			fmt.Printf("error making http request: %s\n", err)
-			os.Exit(1)
+			log.Printf("error making http request: %s\n", err)
+			continue
 		}
-		fmt.Printf("client: got response!\n")
-		fmt.Printf("client: status code: %d\n", res.StatusCode)
+		log.Printf("client: got response!\n")
+		log.Printf("client: status code: %d\n", res.StatusCode)
 		newsList := append(news, newsCreate(res))
+		news = newsList
 		err = res.Body.Close()
 		if err != nil {
-			return nil
+			continue
 		}
-		news = newsList
 	}
 
 	return news
@@ -59,7 +60,7 @@ func (t ApiHackerNewsClient) GetTopAndNewNews() []int64 {
 	req, _ := http.NewRequest("GET", t.TopNewsEndpoint, payload)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Printf("error making http request: %s\n", err)
+		log.Printf("error making http request: %s\n", err)
 		os.Exit(1)
 	}
 	defer func(Body io.ReadCloser) {
@@ -68,8 +69,8 @@ func (t ApiHackerNewsClient) GetTopAndNewNews() []int64 {
 
 		}
 	}(res.Body)
-	fmt.Printf("client: got response!\n")
-	fmt.Printf("client: status code: %d\n", res.StatusCode)
+	log.Printf("client: got response!\n")
+	log.Printf("client: status code: %d\n", res.StatusCode)
 	return newsIdsCreate(res)
 }
 

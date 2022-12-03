@@ -28,6 +28,7 @@ func (t *TgBot) SendMessage(message string, chaId int64) {
 	msg := tgbotapi.NewMessage(chaId, message)
 	_, err := t.Bot.Send(msg)
 	if err != nil {
+		log.Printf("Error sending message : %s error: %s", message, err)
 		return
 	}
 }

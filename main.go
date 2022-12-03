@@ -18,17 +18,17 @@ func main() {
 	for {
 		apiService := hackerNews.ApiHackerNewsClient{TopNewsEndpoint: config.HackerNewsGetTopNewsIds, GetByIdEndpoint: config.HackerNewsGetByItemid}
 		news := apiService.GetNews(getExistNews(config.OldNewsFilePath).Items)
-		for i := 0; i < len(news); i++ {
-			if news[i].Url == "" {
+		for _, item := range news {
+			if item.Url == "" {
 				continue
 			} else {
-				bot.SendMessage(news[i].Title+"\n"+news[i].Url, config.TelegramChatId)
+				bot.SendMessage(item.Title+"\n"+item.Url, config.TelegramChatId)
 
 			}
 
 		}
 		writeNews(news, config.OldNewsFilePath)
-		time.Sleep(200 * time.Second)
+		time.Sleep(300 * time.Second)
 	}
 
 }
