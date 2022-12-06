@@ -16,19 +16,21 @@ func main() {
 	bot := telegramBot.TgBot{TelegramBotApiKey: config.TelegramBotApiKey}
 	bot.StartBot()
 	for {
+		var newsSend []hackerNews.News
 		apiService := hackerNews.ApiHackerNewsClient{TopNewsEndpoint: config.HackerNewsGetTopNewsIds, GetByIdEndpoint: config.HackerNewsGetByItemid}
-		news := apiService.GetNews(getExistNews(config.OldNewsFilePath).Items)
-		for _, item := range news {
-			if item.Url == "" {
+		existItems := getExistNews(config.OldNewsFilePath).Items
+		news := apiService.GetNews(&existItems)
+		for _, item := range *news {
+			if item.Url == "" || item.Score < 100 {
 				continue
 			} else {
-				bot.SendMessage(item.Title+"\n"+item.Url, config.TelegramChatId)
+				bot.SendMessage(item.Title+"\n\n"+item.Url, config.TelegramChatId)
+				newsSend = append(newsSend, item)
 
 			}
-
 		}
-		writeNews(news, config.OldNewsFilePath)
-		time.Sleep(300 * time.Second)
+		writeNews(newsSend, config.OldNewsFilePath)
+		time.Sleep(600 * time.Second)
 	}
 
 }
@@ -53,8 +55,8 @@ func getConfiguration(path string) *Configuration {
 	return &m
 }
 
-func getExistNews(filePath string) OldNews {
-	var oldNews OldNews
+func getExistNews(filePath string) OldNewsList {
+	var oldNews OldNewsList
 	jsonFile, errorFile := os.OpenFile(filePath, os.O_RDONLY, 0600)
 	if errorFile != nil {
 		log.Printf("error open file : %s to : %s\n", filePath, errorFile)
@@ -75,17 +77,20 @@ func getExistNews(filePath string) OldNews {
 	return oldNews
 }
 
-func writeNews(news []*hackerNews.News, filePath string) {
+func writeNews(news []hackerNews.News, filePath string) {
 	if news == nil {
 		return
 	}
 	oldNews := getExistNews(filePath)
 	var newsIds = oldNews.Items
-	for i := range news {
-		i := append(newsIds, news[i].Id)
-		newsIds = i
+	if len(newsIds) >= 10000 {
+		newsIds = newsIds[len(newsIds)-500 : len(newsIds)-1]
 	}
-	writeNews := OldNews{newsIds}
+	for _, item := range news {
+		newList := append(newsIds, item)
+		newsIds = newList
+	}
+	writeNews := OldNewsList{newsIds}
 	file, err := json.MarshalIndent(writeNews, "", " ")
 	err = ioutil.WriteFile(filePath, file, 0644)
 	if err != nil {
@@ -105,6 +110,6 @@ type Configuration struct {
 	OldNewsFilePath         string `json:"oldNewsFilePath"`
 }
 
-type OldNews struct {
-	Items []int64 `json:"items"`
+type OldNewsList struct {
+	Items []hackerNews.News `json:"items"`
 }

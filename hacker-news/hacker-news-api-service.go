@@ -15,15 +15,15 @@ type ApiClient interface {
 	GetNews(id string) *[]News
 }
 
-func (t ApiHackerNewsClient) GetNews(existNews []int64) []*News {
-	var news []*News
+func (t ApiHackerNewsClient) GetNews(existNews *[]News) *[]News {
+	var news []News
 	topAndNewNews := t.GetTopAndNewNews()
 	var notExistNews []int64
-	if len(existNews) != 0 {
-		for _, newItem := range topAndNewNews {
+	if len(*existNews) != 0 {
+		for _, newItem := range *topAndNewNews {
 			isAdded := false
-			for _, oldItem := range existNews {
-				if newItem == oldItem {
+			for _, oldItem := range *existNews {
+				if newItem == oldItem.Id {
 					isAdded = true
 					break
 				}
@@ -33,6 +33,8 @@ func (t ApiHackerNewsClient) GetNews(existNews []int64) []*News {
 				notExistNews = i
 			}
 		}
+	} else {
+		notExistNews = *topAndNewNews
 	}
 
 	for _, item := range notExistNews {
@@ -44,18 +46,17 @@ func (t ApiHackerNewsClient) GetNews(existNews []int64) []*News {
 		}
 		log.Printf("client: got response!\n")
 		log.Printf("client: status code: %d\n", res.StatusCode)
-		newsList := append(news, newsCreate(res))
+		newsList := append(news, *newsCreate(res))
 		news = newsList
 		err = res.Body.Close()
 		if err != nil {
 			continue
 		}
 	}
-
-	return news
+	return &news
 
 }
-func (t ApiHackerNewsClient) GetTopAndNewNews() []int64 {
+func (t ApiHackerNewsClient) GetTopAndNewNews() *[]int64 {
 	payload := strings.NewReader("{}")
 	req, _ := http.NewRequest("GET", t.TopNewsEndpoint, payload)
 	res, err := http.DefaultClient.Do(req)
@@ -74,13 +75,13 @@ func (t ApiHackerNewsClient) GetTopAndNewNews() []int64 {
 	return newsIdsCreate(res)
 }
 
-func newsIdsCreate(r *http.Response) []int64 {
+func newsIdsCreate(r *http.Response) *[]int64 {
 	var news []int64
 	err := json.NewDecoder(r.Body).Decode(&news)
 	if err != nil {
 		panic(err)
 	}
-	return news
+	return &news
 }
 
 func newsCreate(r *http.Response) *News {
